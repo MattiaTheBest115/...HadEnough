@@ -13,6 +13,7 @@ include(
     "CB01",
     "CorsaroNero",
     "DaddyLive",
+    "FusionHub",
     "Huhu",
     "IlCorsaroViola",
     "IPTV",

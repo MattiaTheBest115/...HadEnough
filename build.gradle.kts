@@ -12,7 +12,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.13.0")
+        classpath("com.android.tools.build:gradle:8.13.2")
         // Cloudstream gradle plugin which makes everything work and builds plugins
         classpath("com.github.recloudstream:gradle:7cc64f92d8")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0")
@@ -27,6 +27,38 @@ allprojects {
     }
 }
 
+fun Project.resolveRepositoryUrl(): String {
+    val githubRepository = System.getenv("GITHUB_REPOSITORY")
+        ?.takeIf { it.isNotBlank() }
+        ?.let { repo ->
+            if (repo.startsWith("http://") || repo.startsWith("https://")) repo
+            else "https://github.com/$repo"
+        }
+    if (githubRepository != null) return githubRepository
+
+    val gitConfig = rootProject.file(".git/config")
+    if (gitConfig.exists()) {
+        var insideOrigin = false
+        var originUrl: String? = null
+
+        gitConfig.forEachLine { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed == "[remote \"origin\"]" -> insideOrigin = true
+                trimmed.startsWith("[") -> insideOrigin = false
+                insideOrigin && trimmed.startsWith("url = ") -> {
+                    originUrl = trimmed.removePrefix("url = ").removeSuffix(".git")
+                }
+            }
+        }
+
+        if (!originUrl.isNullOrBlank()) {
+            return originUrl!!
+        }
+    }
+
+    return "https://github.com/doGior/doGiorsHadEnough"
+}
 
 fun Project.cloudstream(configuration: CloudstreamExtension.() -> Unit) = extensions.getByName<CloudstreamExtension>("cloudstream").configuration()
 
@@ -42,8 +74,7 @@ subprojects {
     apply(plugin = "com.lagradost.cloudstream3.gradle")
 
     cloudstream {
-        // when running through github workflow, GITHUB_REPOSITORY should contain current repository name
-        setRepo(System.getenv("GITHUB_REPOSITORY") ?: "https://github.com/doGior/doGiorsHadEnough")
+        setRepo(resolveRepositoryUrl())
         authors = listOf("doGior")
     }
 

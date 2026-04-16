@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="header_tw">Fusion Hub</string>
+    <string name="server_address_label">URL StreamingCommunity</string>
+    <string name="server_address_hint">Lascia vuoto per usare quello predefinito</string>
+    <string name="anime_priority_label">Ordine fonti anime</string>
+    <string name="anime_priority_animeunity">AnimeUnity prima</string>
+    <string name="anime_priority_animeworld">AnimeWorld prima</string>
+    <string name="save_btn">Salva</string>
+    <string name="settings_saved">Impostazioni salvate. Riavvia app per applicarle</string>
+    <string name="default_restored">URL predefinito ripristinato. Riavvia app per applicarlo</string>
+    <string name="invalid_url_fallback">URL non valido. Ripristinato quello predefinito</string>
+</resources>
