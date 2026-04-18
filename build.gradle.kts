@@ -48,15 +48,15 @@ subprojects {
     }
 
     android {
-        namespace = "it.dogior.hadEnough"
-        compileSdk = 36
+        namespace = "it.dogior.hadEnough.${this.project.name.lowercase()}"
+        compileSdk = 35
 
         defaultConfig {
             minSdk = 21
         }
 
         lint {
-            targetSdk = 36
+            targetSdk = 35
         }
 
         compileOptions {
