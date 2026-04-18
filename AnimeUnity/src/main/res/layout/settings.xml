@@ -1,119 +1,366 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/settings_sheet_background"
+    android:fillViewport="true"
     tools:context=".AnimeUnitySettings">
 
     <LinearLayout
-        android:id="@+id/settingsLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:paddingStart="16dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp">
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_panel_background"
+            android:elevation="4dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/header_tw"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/header_tw"
+                        android:textColor="#F4F9FF"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/header_subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/header_subtitle"
+                        android:textColor="#AFC5DE"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/save_btn"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/save_button_text"
+                    android:textAllCaps="false"
+                    android:textColor="#08141F"
+                    app:backgroundTint="#73D7FF"
+                    app:cornerRadius="18dp"
+                    app:icon="@drawable/save_icon"
+                    app:iconTint="#08141F"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_panel_background"
+            android:elevation="3dp"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:id="@+id/sections_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_header_background"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="56dp"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/sections_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sections_label"
+                        android:textColor="#F4F9FF"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/sections_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/sections_description"
+                        android:textColor="#9FB3CB"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/sections_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#D9ECFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="▾" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sections_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="12dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sections_hint"
+                    android:textColor="#AFC5DE"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:id="@+id/home_sections_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_panel_background"
+            android:elevation="3dp"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:id="@+id/display_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/settings_header_background"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="56dp"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/display_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/display_label"
+                        android:textColor="#F4F9FF"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/display_description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="@string/display_description"
+                        android:textColor="#9FB3CB"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/display_indicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#D9ECFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="▾" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/display_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="12dp">
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/score_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/display_score_switch_text"
+                    android:textColor="#F4F9FF"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/dub_sub_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/display_dub_sub_switch_text"
+                    android:textColor="#F4F9FF"
+                    android:textSize="15sp" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/episode_number_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/display_episode_number_switch_text"
+                    android:textColor="#F4F9FF"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/settings_panel_background"
+            android:elevation="3dp"
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
-                android:id="@+id/header_tw"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:text="@string/header_tw"
-                android:textSize="24sp"
+                android:text="@string/base_url_label"
+                android:textColor="#F4F9FF"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/save_btn"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@android:color/transparent"
-                android:contentDescription="Salva impostazioni" />
-        </RelativeLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/base_url_description"
+                android:textColor="#9FB3CB"
+                android:textSize="12sp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/base_url_layout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:hint="@string/base_url_hint"
+                app:boxBackgroundColor="#122131"
+                app:boxCornerRadiusBottomEnd="16dp"
+                app:boxCornerRadiusBottomStart="16dp"
+                app:boxCornerRadiusTopEnd="16dp"
+                app:boxCornerRadiusTopStart="16dp"
+                app:boxStrokeColor="#4D6887"
+                app:helperTextEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/base_url_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:inputType="textUri"
+                    android:maxLines="1"
+                    android:minHeight="54dp"
+                    android:singleLine="true"
+                    android:textColor="#F4F9FF"
+                    android:textColorHint="#6F8EAE" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="12dp"
-            android:background="@android:color/transparent" />
+            android:layout_height="12dp" />
 
-        <TextView
-            android:id="@+id/sections_label"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/sections_label"
-            android:textStyle="bold" />
+            android:background="@drawable/settings_panel_background"
+            android:elevation="3dp"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <Switch
-            android:id="@+id/latest_episodes_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/latest_episodes_switch_text"
-            android:textSize="16sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/actions_label"
+                android:textColor="#F4F9FF"
+                android:textSize="17sp"
+                android:textStyle="bold" />
 
-        <Switch
-            android:id="@+id/calendar_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/calendar_switch_text"
-            android:textSize="16sp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/actions_description"
+                android:textColor="#9FB3CB"
+                android:textSize="12sp" />
 
-        <Switch
-            android:id="@+id/ongoing_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/ongoing_switch_text"
-            android:textSize="16sp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reset_btn"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/reset_button_text"
+                android:textAllCaps="false"
+                android:textColor="#FFD2D2"
+                app:cornerRadius="18dp"
+                app:strokeColor="#B45C5C"
+                app:strokeWidth="1dp" />
 
-        <Switch
-            android:id="@+id/popular_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/popular_switch_text"
-            android:textSize="16sp" />
-
-        <Switch
-            android:id="@+id/best_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/best_switch_text"
-            android:textSize="16sp" />
-
-        <Switch
-            android:id="@+id/upcoming_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/upcoming_switch_text"
-            android:textSize="16sp" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="12dp"
-            android:background="@android:color/transparent" />
-
-        <TextView
-            android:id="@+id/display_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/display_label"
-            android:textStyle="bold" />
-
-        <Switch
-            android:id="@+id/score_switch"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="@string/score_switch_text"
-            android:textSize="16sp" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="16dp"
-            android:background="@android:color/transparent" />
-
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/reset_button_support"
+                android:textColor="#AFC5DE"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -1,14 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="header_tw">Impostazioni AnimeUnity</string>
-    <string name="sections_label">Sezioni della home</string>
-    <string name="latest_episodes_switch_text">Ultimi Episodi</string>
-    <string name="calendar_switch_text">Calendario</string>
-    <string name="ongoing_switch_text">In Corso</string>
-    <string name="popular_switch_text">Popolari</string>
-    <string name="best_switch_text">I migliori</string>
-    <string name="upcoming_switch_text">In Arrivo</string>
+    <string name="header_subtitle">Personalizza home, visualizzazione e collegamento del provider.</string>
+    <string name="save_button_text">Salva</string>
+
+    <string name="sections_label">Sezioni della Home</string>
+    <string name="sections_description">Ordina le sezioni, scegli quante schede mostrare e decidi se visualizzarle.</string>
+    <string name="sections_hint">Ogni sezione supporta da 1 a 30 schede per caricamento.</string>
+
     <string name="display_label">Visualizzazione</string>
-    <string name="score_switch_text">Mostra valutazione</string>
-    <string name="settings_saved">Impostazioni salvate. Riavvia l\'applicazione per applicarle</string>
+    <string name="display_description">Controlla quali dettagli mostrare sulle schede anime.</string>
+    <string name="display_score_switch_text">Mostra valutazione</string>
+    <string name="display_dub_sub_switch_text">Mostra dub/sub</string>
+    <string name="display_episode_number_switch_text">Mostra numero episodio</string>
+
+    <string name="base_url_label">Link / Host</string>
+    <string name="base_url_description">Puoi usare un dominio alternativo. Lascia il campo invariato per quello predefinito.</string>
+    <string name="base_url_hint">https://www.animeunity.so</string>
+    <string name="invalid_base_url">Inserisci un link valido.</string>
+
+    <string name="actions_label">Azioni</string>
+    <string name="actions_description">Salvataggio, conferma di riavvio e ripristino completo delle impostazioni.</string>
+    <string name="reset_button_text">Reset impostazioni</string>
+    <string name="reset_button_support">Resetta ordine, visibilità, limiti per sezione, visualizzazione e link personalizzato.</string>
+
+    <string name="show_section_switch_text">Mostra</string>
+    <string name="item_count_label">Schede da mostrare</string>
+    <string name="item_count_helper">Valore consentito: 1-30</string>
+    <string name="item_count_error">Inserisci un numero tra 1 e 30.</string>
+    <string name="move_up_short">Su</string>
+    <string name="move_down_short">Giù</string>
+    <string name="position_label">Posizione %1$d</string>
+
+    <string name="settings_saved_title">Impostazioni salvate</string>
+    <string name="settings_saved_message">Vuoi riavviare l\'applicazione ora per applicare immediatamente le modifiche?</string>
+    <string name="reset_done_title">Impostazioni reimpostate</string>
+    <string name="reset_done_message">Vuoi riavviare l\'applicazione ora per applicare subito le impostazioni predefinite?</string>
+    <string name="reset_confirm_title">Ripristinare le impostazioni?</string>
+    <string name="reset_confirm_message">Questa azione resetta tutte le impostazioni di AnimeUnity, incluso il link personalizzato.</string>
+    <string name="reset_confirm_button">Resetta</string>
+    <string name="restart_now">Riavvia ora</string>
+    <string name="restart_later">Più tardi</string>
+    <string name="cancel_button">Annulla</string>
+    <string name="restart_unavailable">Impossibile riavviare automaticamente l\'app. Chiudila e riaprila manualmente.</string>
 </resources>
