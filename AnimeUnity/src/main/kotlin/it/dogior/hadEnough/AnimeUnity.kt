@@ -7,6 +7,7 @@ import com.lagradost.cloudstream3.HomePageResponse
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.LoadResponse.Companion.addAniListId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addDuration
+import com.lagradost.cloudstream3.LoadResponse.Companion.addKitsuId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addMalId
 import com.lagradost.cloudstream3.LoadResponse.Companion.addScore
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
@@ -32,6 +33,7 @@ import com.lagradost.cloudstream3.newAnimeLoadResponse
 import com.lagradost.cloudstream3.newAnimeSearchResponse
 import com.lagradost.cloudstream3.newEpisode
 import com.lagradost.cloudstream3.newHomePageResponse
+import com.lagradost.cloudstream3.syncproviders.SyncIdName
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -56,6 +58,10 @@ class AnimeUnity(
     override var supportedTypes = setOf(TvType.Anime, TvType.AnimeMovie, TvType.OVA)
     override var lang = "it"
     override val hasMainPage = true
+    override val supportedSyncNames = setOf(
+        SyncIdName.Anilist,
+        SyncIdName.MyAnimeList,
+    )
 
     companion object {
         @Suppress("ConstPropertyName")
@@ -855,10 +861,10 @@ class AnimeUnity(
             ?: metadata?.airDate?.takeIf(String::isNotBlank)
     }
 
-    private suspend fun fetchAniZipMetadata(anime: Anime): AniZipMetadata? {
+    private suspend fun fetchAniZipMetadata(malId: Int?, anilistId: Int?): AniZipMetadata? {
         val identifiers = buildList {
-            anime.malId?.let { add("mal_id" to it) }
-            anime.anilistId?.let { add("anilist_id" to it) }
+            malId?.let { add("mal_id" to it) }
+            anilistId?.let { add("anilist_id" to it) }
         }
 
         identifiers.forEach { (parameter, id) ->
@@ -869,12 +875,19 @@ class AnimeUnity(
             val response = runCatching { app.get(url).text }.getOrNull() ?: return@forEach
             val metadata = runCatching { parseJson<AniZipMetadata>(response) }.getOrNull()
 
-            if (metadata?.episodes?.isNotEmpty() == true) {
+            if (
+                metadata?.episodes?.isNotEmpty() == true ||
+                metadata?.mappings?.hasSyncIds() == true
+            ) {
                 return metadata
             }
         }
 
         return null
+    }
+
+    private fun AniZipMappings.hasSyncIds(): Boolean {
+        return malId != null || anilistId != null || kitsuId != null
     }
 
     private fun buildPlayerSourceOptions(playbackData: EpisodePlaybackData): List<PlayerSourceOption> {
@@ -1377,10 +1390,15 @@ class AnimeUnity(
         }
 
         val primaryAnime = subPageData?.anime ?: dubPageData?.anime ?: currentAnime
+        val primaryMalId = primaryAnime.malId ?: variants.firstNotNullOfOrNull { it.malId }
+        val primaryAniListId = primaryAnime.anilistId ?: variants.firstNotNullOfOrNull { it.anilistId }
         val title = getAnimeTitle(primaryAnime)
-        val animePoster = getImage(primaryAnime.imageUrl, primaryAnime.anilistId)
+        val animePoster = getImage(primaryAnime.imageUrl, primaryAniListId)
         val episodeFallbackPosterUrl = primaryAnime.cover?.let(::getBanner) ?: animePoster
-        val episodeMetadata = fetchAniZipMetadata(primaryAnime)
+        val episodeMetadata = fetchAniZipMetadata(primaryMalId, primaryAniListId)
+        val syncMalId = primaryMalId ?: episodeMetadata?.mappings?.malId
+        val syncAniListId = primaryAniListId ?: episodeMetadata?.mappings?.anilistId
+        val syncKitsuId = episodeMetadata?.mappings?.kitsuId
         val relatedAnimes = groupAnimeCards(currentPageData.relatedAnime).amap { entry ->
             val anime = entry.anime
             val relatedTitle = getAnimeTitle(anime)
@@ -1445,8 +1463,9 @@ class AnimeUnity(
                     addEpisodes(DubStatus.Subbed, subEpisodes)
                 }
             }
-            addAniListId(primaryAnime.anilistId)
-            addMalId(primaryAnime.malId)
+            addAniListId(syncAniListId)
+            addMalId(syncMalId)
+            addKitsuId(syncKitsuId)
             if (trailerUrl != null) {
                 addTrailer(trailerUrl)
             }

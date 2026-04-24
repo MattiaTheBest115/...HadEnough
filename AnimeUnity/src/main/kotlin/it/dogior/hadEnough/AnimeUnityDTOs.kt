@@ -241,7 +241,14 @@ data class JikanTrailer(
 )
 
 data class AniZipMetadata(
-    @JsonProperty("episodes") val episodes: Map<String, AniZipEpisode>?
+    @JsonProperty("episodes") val episodes: Map<String, AniZipEpisode>?,
+    @JsonProperty("mappings") val mappings: AniZipMappings?
+)
+
+data class AniZipMappings(
+    @JsonProperty("mal_id") val malId: Int?,
+    @JsonProperty("anilist_id") val anilistId: Int?,
+    @JsonProperty("kitsu_id") val kitsuId: Int?
 )
 
 data class AniZipEpisode(
