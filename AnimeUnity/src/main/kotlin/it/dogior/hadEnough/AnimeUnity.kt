@@ -19,9 +19,12 @@ import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.ShowStatus
 import com.lagradost.cloudstream3.SubtitleFile
 import com.lagradost.cloudstream3.TvType
+import com.lagradost.cloudstream3.addDate
+import com.lagradost.cloudstream3.addDub
 import com.lagradost.cloudstream3.addDubStatus
 import com.lagradost.cloudstream3.addEpisodes
 import com.lagradost.cloudstream3.addPoster
+import com.lagradost.cloudstream3.addSub
 import com.lagradost.cloudstream3.amap
 import com.lagradost.cloudstream3.app
 import com.lagradost.cloudstream3.mainPageOf
@@ -66,6 +69,7 @@ class AnimeUnity(
         const val popularSectionName = "Popolari"
         const val bestSectionName = "I migliori"
         const val upcomingSectionName = "In Arrivo"
+        const val noEpisodeDescription = "Nessuna descrizione"
         
         var name = "AnimeUnity"
         var headers = mapOf(
@@ -86,13 +90,32 @@ class AnimeUnity(
 
     private data class GroupedAnimeCard(
         val anime: Anime,
-        val hasDub: Boolean,
+        val badges: EpisodeBadgeState,
     )
 
     private data class GroupedLatestEpisodeCard(
         val anime: LatestEpisodeAnime,
-        val hasDub: Boolean,
+        val badges: EpisodeBadgeState,
         val episodeNumber: String,
+        val score: String?,
+    )
+
+    private data class CalendarAnimeItem(
+        val anime: Anime,
+        val episodeNumber: Int?,
+    )
+
+    private data class GroupedCalendarAnimeCard(
+        val anime: Anime,
+        val badges: EpisodeBadgeState,
+        val episodeNumber: Int?,
+    )
+
+    private data class EpisodeBadgeState(
+        val hasSub: Boolean,
+        val hasDub: Boolean,
+        val subEpisodeCount: Int? = null,
+        val dubEpisodeCount: Int? = null,
     )
 
     private data class AnimePageData(
@@ -281,6 +304,88 @@ class AnimeUnity(
         return anime.dub == 1 || getAnimeTitle(anime).contains("(ITA)")
     }
 
+    private fun positiveEpisodeCount(count: Int?): Int? {
+        return count?.takeIf { it > 0 }
+    }
+
+    private fun getEpisodeCount(anime: Anime): Int? {
+        return positiveEpisodeCount(anime.realEpisodesCount)
+            ?: positiveEpisodeCount(anime.episodesCount)
+    }
+
+    private fun getEpisodeCount(anime: LatestEpisodeAnime): Int? {
+        return positiveEpisodeCount(anime.realEpisodesCount)
+            ?: positiveEpisodeCount(anime.episodesCount)
+    }
+
+    private fun buildAnimeBadgeState(anime: Anime): EpisodeBadgeState {
+        val episodeCount = getEpisodeCount(anime)
+        return if (isDubAnime(anime)) {
+            EpisodeBadgeState(hasSub = false, hasDub = true, dubEpisodeCount = episodeCount)
+        } else {
+            EpisodeBadgeState(hasSub = true, hasDub = false, subEpisodeCount = episodeCount)
+        }
+    }
+
+    private fun buildLatestEpisodeBadgeState(item: LatestEpisodeItem): EpisodeBadgeState {
+        val episodeNumber = positiveEpisodeCount(item.number.toIntOrNull())
+        return if (isDubAnime(item.anime)) {
+            EpisodeBadgeState(hasSub = false, hasDub = true, dubEpisodeCount = episodeNumber)
+        } else {
+            EpisodeBadgeState(hasSub = true, hasDub = false, subEpisodeCount = episodeNumber)
+        }
+    }
+
+    private fun getFirstAvailableScore(items: List<LatestEpisodeItem>): String? {
+        return items.firstNotNullOfOrNull { item ->
+            item.anime.score?.trim()?.takeIf(String::isNotBlank)
+        }
+    }
+
+    private fun combineAnimeBadgeStates(animes: List<Anime>): EpisodeBadgeState {
+        val subEpisodeCount = animes
+            .filterNot(::isDubAnime)
+            .mapNotNull(::getEpisodeCount)
+            .maxOrNull()
+        val dubEpisodeCount = animes
+            .filter(::isDubAnime)
+            .mapNotNull(::getEpisodeCount)
+            .maxOrNull()
+
+        return EpisodeBadgeState(
+            hasSub = animes.any { !isDubAnime(it) },
+            hasDub = animes.any(::isDubAnime),
+            subEpisodeCount = subEpisodeCount,
+            dubEpisodeCount = dubEpisodeCount,
+        )
+    }
+
+    private fun combineCalendarBadgeStates(items: List<CalendarAnimeItem>): EpisodeBadgeState {
+        val subEpisodeNumber = items
+            .filterNot { isDubAnime(it.anime) }
+            .mapNotNull { positiveEpisodeCount(it.episodeNumber) }
+            .maxOrNull()
+        val dubEpisodeNumber = items
+            .filter { isDubAnime(it.anime) }
+            .mapNotNull { positiveEpisodeCount(it.episodeNumber) }
+            .maxOrNull()
+
+        return EpisodeBadgeState(
+            hasSub = items.any { !isDubAnime(it.anime) },
+            hasDub = items.any { isDubAnime(it.anime) },
+            subEpisodeCount = subEpisodeNumber,
+            dubEpisodeCount = dubEpisodeNumber,
+        )
+    }
+
+    private fun EpisodeBadgeState.withEpisodeNumber(episodeNumber: Int?): EpisodeBadgeState {
+        val normalizedEpisodeNumber = positiveEpisodeCount(episodeNumber) ?: return this
+        return copy(
+            subEpisodeCount = if (hasSub) normalizedEpisodeNumber else null,
+            dubEpisodeCount = if (hasDub) normalizedEpisodeNumber else null,
+        )
+    }
+
     private fun Anime.contentKey(): String {
         return when {
             anilistId != null -> "anilist:$anilistId"
@@ -307,7 +412,7 @@ class AnimeUnity(
         return when {
             primaryIsDub && !candidateIsDub -> candidate
             !primaryIsDub && candidateIsDub -> primary
-            candidate.episodesCount > primary.episodesCount -> candidate
+            (getEpisodeCount(candidate) ?: 0) > (getEpisodeCount(primary) ?: 0) -> candidate
             else -> primary
         }
     }
@@ -319,7 +424,7 @@ class AnimeUnity(
         return when {
             primaryIsDub && !candidateIsDub -> candidate
             !primaryIsDub && candidateIsDub -> primary
-            candidate.episodesCount > primary.episodesCount -> candidate
+            (getEpisodeCount(candidate) ?: 0) > (getEpisodeCount(primary) ?: 0) -> candidate
             else -> primary
         }
     }
@@ -330,7 +435,7 @@ class AnimeUnity(
             return animes.map { anime ->
                 GroupedAnimeCard(
                     anime = anime,
-                    hasDub = isDubAnime(anime),
+                    badges = buildAnimeBadgeState(anime),
                 )
             }
         }
@@ -341,7 +446,38 @@ class AnimeUnity(
             .map { variants ->
                 GroupedAnimeCard(
                     anime = variants.reduce { primary, candidate -> preferAnime(primary, candidate) },
-                    hasDub = variants.any { isDubAnime(it) },
+                    badges = combineAnimeBadgeStates(variants),
+                )
+            }
+    }
+
+    private fun groupCalendarAnimeCards(items: List<CalendarAnimeItem>): List<GroupedCalendarAnimeCard> {
+        if (items.isEmpty()) return emptyList()
+        if (!shouldUseUnifiedDubSubCards()) {
+            return items.map { item ->
+                GroupedCalendarAnimeCard(
+                    anime = item.anime,
+                    badges = buildAnimeBadgeState(item.anime).withEpisodeNumber(item.episodeNumber),
+                    episodeNumber = item.episodeNumber,
+                )
+            }
+        }
+
+        return items
+            .groupBy { it.anime.contentKey() }
+            .values
+            .map { variants ->
+                val latestEpisode = variants.maxWithOrNull(
+                    compareBy<CalendarAnimeItem>(
+                        { it.episodeNumber ?: Int.MIN_VALUE },
+                        { getAnimeTitle(it.anime) }
+                    )
+                ) ?: variants.first()
+
+                GroupedCalendarAnimeCard(
+                    anime = variants.map { it.anime }.reduce { primary, candidate -> preferAnime(primary, candidate) },
+                    badges = combineCalendarBadgeStates(variants),
+                    episodeNumber = latestEpisode.episodeNumber,
                 )
             }
     }
@@ -352,8 +488,9 @@ class AnimeUnity(
             return items.map { item ->
                 GroupedLatestEpisodeCard(
                     anime = item.anime,
-                    hasDub = isDubAnime(item.anime),
+                    badges = buildLatestEpisodeBadgeState(item),
                     episodeNumber = item.number,
+                    score = item.anime.score,
                 )
             }
         }
@@ -362,17 +499,14 @@ class AnimeUnity(
             .groupBy { it.anime.contentKey() }
             .values
             .map { variants ->
-                val latestEpisode = variants.maxWithOrNull(
-                    compareBy<LatestEpisodeItem>(
-                        { parseEpisodeSortValue(it.number) ?: Double.NEGATIVE_INFINITY },
-                        { it.number }
-                    )
-                ) ?: variants.first()
+                val latestEpisode = variants.first()
 
                 GroupedLatestEpisodeCard(
-                    anime = variants.map { it.anime }.reduce { primary, candidate -> preferAnime(primary, candidate) },
-                    hasDub = variants.any { isDubAnime(it.anime) },
+                    anime = latestEpisode.anime,
+                    badges = buildLatestEpisodeBadgeState(latestEpisode),
                     episodeNumber = latestEpisode.number,
+                    score = latestEpisode.anime.score?.takeIf(String::isNotBlank)
+                        ?: getFirstAvailableScore(variants),
                 )
             }
     }
@@ -401,22 +535,27 @@ class AnimeUnity(
         }
     }
 
-    private fun getMiniCardDubStatus(hasDub: Boolean): DubStatus {
-        return if (hasDub) DubStatus.Dubbed else DubStatus.Subbed
-    }
-
     private fun applyCardDisplayState(
         response: AnimeSearchResponse,
-        dubStatus: DubStatus,
+        badges: EpisodeBadgeState,
         poster: String?,
         score: String?,
-        episodeNumber: Int? = null,
     ) {
         if (shouldShowDubSub()) {
             if (shouldShowEpisodeNumber()) {
-                response.addDubStatus(dubStatus, episodeNumber)
+                if (badges.hasSub) {
+                    badges.subEpisodeCount?.let(response::addSub) ?: response.addDubStatus(DubStatus.Subbed)
+                }
+                if (badges.hasDub) {
+                    badges.dubEpisodeCount?.let(response::addDub) ?: response.addDubStatus(DubStatus.Dubbed)
+                }
             } else {
-                response.addDubStatus(dubStatus)
+                if (badges.hasSub) {
+                    response.addDubStatus(DubStatus.Subbed)
+                }
+                if (badges.hasDub) {
+                    response.addDubStatus(DubStatus.Dubbed)
+                }
             }
         }
 
@@ -472,6 +611,7 @@ class AnimeUnity(
             val anime = entry.anime
             val title = getAnimeTitle(anime)
             val poster = getImage(anime.imageUrl, anime.anilistId)
+            val badges = entry.badges.withEpisodeNumber(episodeNumber)
 
             newAnimeSearchResponse(
                 name = buildDisplayTitle(title, episodeNumber),
@@ -484,10 +624,9 @@ class AnimeUnity(
             ).apply {
                 applyCardDisplayState(
                     response = this,
-                    dubStatus = getMiniCardDubStatus(entry.hasDub),
+                    badges = badges,
                     poster = poster,
-                    score = anime.score,
-                    episodeNumber = episodeNumber
+                    score = anime.score
                 )
             }
         }
@@ -588,10 +727,37 @@ class AnimeUnity(
             ).apply {
                 applyCardDisplayState(
                     response = this,
-                    dubStatus = getMiniCardDubStatus(entry.hasDub),
+                    badges = entry.badges,
+                    poster = poster,
+                    score = entry.score
+                )
+            }
+        }
+    }
+
+    private suspend fun calendarResponseBuilder(
+        items: List<CalendarAnimeItem>,
+        limit: Int,
+    ): List<SearchResponse> {
+        return groupCalendarAnimeCards(items).take(limit).amap { entry ->
+            val anime = entry.anime
+            val title = getAnimeTitle(anime)
+            val poster = getImage(anime.imageUrl, anime.anilistId)
+
+            newAnimeSearchResponse(
+                name = buildDisplayTitle(title, entry.episodeNumber),
+                url = "$mainUrl/anime/${anime.id}-${anime.slug}",
+                type = when {
+                    anime.type == "TV" -> TvType.Anime
+                    anime.type == "Movie" || anime.episodesCount == 1 -> TvType.AnimeMovie
+                    else -> TvType.OVA
+                }
+            ).apply {
+                applyCardDisplayState(
+                    response = this,
+                    badges = entry.badges,
                     poster = poster,
                     score = anime.score,
-                    episodeNumber = entry.episodeNumber.toIntOrNull()
                 )
             }
         }
@@ -634,6 +800,81 @@ class AnimeUnity(
 
     private fun buildEpisodeDisplayName(number: String): String {
         return "Episodio $number"
+    }
+
+    private fun normalizeEpisodeNumber(number: String?): String? {
+        val normalized = number
+            ?.trim()
+            ?.replace(',', '.')
+            ?.takeIf(String::isNotBlank)
+            ?: return null
+        val numericValue = normalized.toDoubleOrNull() ?: return normalized
+        val intValue = numericValue.toInt()
+
+        return if (numericValue == intValue.toDouble()) intValue.toString() else numericValue.toString()
+    }
+
+    private fun getAniZipEpisode(metadata: AniZipMetadata?, number: String): AniZipEpisode? {
+        val episodes = metadata?.episodes ?: return null
+        val normalizedNumber = normalizeEpisodeNumber(number)
+
+        episodes[number]?.let { return it }
+        normalizedNumber?.let { episodes[it]?.let { episode -> return episode } }
+
+        return episodes.values.firstOrNull { episode ->
+            normalizeEpisodeNumber(episode.episode) == normalizedNumber
+        }
+    }
+
+    private fun getAniZipEpisodeTitle(metadata: AniZipEpisode?): String? {
+        val titles = metadata?.title ?: return null
+
+        return listOf("it", "en", "x-jat", "ja")
+            .firstNotNullOfOrNull { language -> titles[language]?.trim()?.takeIf(String::isNotBlank) }
+            ?: titles.values.firstNotNullOfOrNull { it?.trim()?.takeIf(String::isNotBlank) }
+    }
+
+    private fun cleanExternalEpisodeText(text: String?): String? {
+        return text
+            ?.replace("<[^>]+>".toRegex(), " ")
+            ?.replace("\\s+".toRegex(), " ")
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+    }
+
+    private fun getAniZipEpisodeDescription(metadata: AniZipEpisode?): String {
+        return cleanExternalEpisodeText(metadata?.overview)
+            ?: cleanExternalEpisodeText(metadata?.summary)
+            ?: noEpisodeDescription
+    }
+
+    private fun getAniZipEpisodeAirDate(metadata: AniZipEpisode?): String? {
+        return metadata?.airDateUtc
+            ?.substringBefore("T")
+            ?.takeIf(String::isNotBlank)
+            ?: metadata?.airDate?.takeIf(String::isNotBlank)
+    }
+
+    private suspend fun fetchAniZipMetadata(anime: Anime): AniZipMetadata? {
+        val identifiers = buildList {
+            anime.malId?.let { add("mal_id" to it) }
+            anime.anilistId?.let { add("anilist_id" to it) }
+        }
+
+        identifiers.forEach { (parameter, id) ->
+            val url = "https://api.ani.zip/mappings".toHttpUrl().newBuilder()
+                .addQueryParameter(parameter, id.toString())
+                .build()
+                .toString()
+            val response = runCatching { app.get(url).text }.getOrNull() ?: return@forEach
+            val metadata = runCatching { parseJson<AniZipMetadata>(response) }.getOrNull()
+
+            if (metadata?.episodes?.isNotEmpty() == true) {
+                return metadata
+            }
+        }
+
+        return null
     }
 
     private fun buildPlayerSourceOptions(playbackData: EpisodePlaybackData): List<PlayerSourceOption> {
@@ -684,15 +925,14 @@ class AnimeUnity(
         return sourceMap
     }
 
-    private fun buildMergedEpisodes(
-        primaryEpisodes: LinkedHashMap<String, EpisodeSource>,
-        fallbackEpisodes: LinkedHashMap<String, EpisodeSource>,
+    private fun buildEpisodes(
+        episodes: LinkedHashMap<String, EpisodeSource>,
         subEpisodes: LinkedHashMap<String, EpisodeSource>,
         dubEpisodes: LinkedHashMap<String, EpisodeSource>,
-        fallbackNamePrefix: String? = null,
+        episodeMetadata: AniZipMetadata?,
+        episodeFallbackPosterUrl: String?,
     ): List<com.lagradost.cloudstream3.Episode> {
-        return (primaryEpisodes.keys + fallbackEpisodes.keys)
-            .distinct()
+        return episodes.keys
             .sortedWith(
                 compareBy<String>(
                     { parseEpisodeSortValue(it) ?: Double.POSITIVE_INFINITY },
@@ -700,8 +940,9 @@ class AnimeUnity(
                 )
             )
             .map { episodeNumber ->
-                val source = primaryEpisodes[episodeNumber] ?: fallbackEpisodes[episodeNumber]!!
-                val isFallbackEpisode = primaryEpisodes[episodeNumber] == null
+                val source = episodes[episodeNumber]!!
+                val metadata = getAniZipEpisode(episodeMetadata, source.number)
+                val episodeName = getAniZipEpisodeTitle(metadata) ?: buildEpisodeDisplayName(source.number)
                 val playbackData = EpisodePlaybackData(
                     preferredUrl = source.url,
                     subUrl = subEpisodes[episodeNumber]?.url,
@@ -709,11 +950,14 @@ class AnimeUnity(
                 )
                 newEpisode(playbackData) {
                     this.episode = source.number.toIntOrNull()
-                    if (isFallbackEpisode && fallbackNamePrefix != null) {
-                        this.name = "$fallbackNamePrefix${buildEpisodeDisplayName(source.number)}"
-                    } else if (this.episode == null) {
-                        this.name = buildEpisodeDisplayName(source.number)
-                    }
+                    this.name = episodeName
+                    metadata?.rating
+                        ?.takeIf(String::isNotBlank)
+                        ?.let { this.score = Score.from(it, 10) }
+                    this.posterUrl = metadata?.image?.takeIf(String::isNotBlank) ?: episodeFallbackPosterUrl
+                    this.description = getAniZipEpisodeDescription(metadata)
+                    getAniZipEpisodeAirDate(metadata)?.let { this.addDate(it) }
+                    this.runTime = metadata?.runtime
                 }
             }
     }
@@ -1020,20 +1264,16 @@ class AnimeUnity(
                 val episodeNumber = extractCalendarEpisodeNumber(item, anime)
 
                 if (normalizeDayName(anime.day) == normalizeDayName(currentDay)) {
-                    anime to episodeNumber
+                    CalendarAnimeItem(anime, episodeNumber)
                 } else {
                     null
                 }
             }
-            .distinctBy { it.first.contentKey() }
-            .take(sectionCount)
 
         return newHomePageResponse(
             HomePageList(
                 name = calendarTitle,
-                list = calendarAnime.amap { (anime, ep) ->
-                    searchResponseBuilder(listOf(anime), ep).first()
-                },
+                list = calendarResponseBuilder(calendarAnime, sectionCount),
                 isHorizontalImages = false
             ),
             false
@@ -1138,6 +1378,9 @@ class AnimeUnity(
 
         val primaryAnime = subPageData?.anime ?: dubPageData?.anime ?: currentAnime
         val title = getAnimeTitle(primaryAnime)
+        val animePoster = getImage(primaryAnime.imageUrl, primaryAnime.anilistId)
+        val episodeFallbackPosterUrl = primaryAnime.cover?.let(::getBanner) ?: animePoster
+        val episodeMetadata = fetchAniZipMetadata(primaryAnime)
         val relatedAnimes = groupAnimeCards(currentPageData.relatedAnime).amap { entry ->
             val anime = entry.anime
             val relatedTitle = getAnimeTitle(anime)
@@ -1149,46 +1392,31 @@ class AnimeUnity(
                 else if (anime.type == "Movie" || anime.episodesCount == 1) TvType.AnimeMovie
                 else TvType.OVA
             ) {
-                if (shouldShowDubSub()) {
-                    addDubStatus(getMiniCardDubStatus(entry.hasDub))
-                }
-                addPoster(poster)
+                applyCardDisplayState(
+                    response = this,
+                    badges = entry.badges,
+                    poster = poster,
+                    score = null,
+                )
             }
         }
 
         val subEpisodeMap = buildEpisodeSourceMap(subPageData?.anime, subPageData?.episodes.orEmpty())
         val dubEpisodeMap = buildEpisodeSourceMap(dubPageData?.anime, dubPageData?.episodes.orEmpty())
-        val subEpisodes = if (shouldMergeVariants) {
-            buildMergedEpisodes(
-                primaryEpisodes = subEpisodeMap,
-                fallbackEpisodes = dubEpisodeMap,
-                subEpisodes = subEpisodeMap,
-                dubEpisodes = dubEpisodeMap,
-            )
-        } else {
-            buildMergedEpisodes(
-                primaryEpisodes = subEpisodeMap,
-                fallbackEpisodes = linkedMapOf(),
-                subEpisodes = subEpisodeMap,
-                dubEpisodes = linkedMapOf(),
-            )
-        }
-        val dubEpisodes = if (shouldMergeVariants) {
-            buildMergedEpisodes(
-                primaryEpisodes = dubEpisodeMap,
-                fallbackEpisodes = subEpisodeMap,
-                subEpisodes = subEpisodeMap,
-                dubEpisodes = dubEpisodeMap,
-                fallbackNamePrefix = "[SUB] - ",
-            )
-        } else {
-            buildMergedEpisodes(
-                primaryEpisodes = dubEpisodeMap,
-                fallbackEpisodes = linkedMapOf(),
-                subEpisodes = linkedMapOf(),
-                dubEpisodes = dubEpisodeMap,
-            )
-        }
+        val subEpisodes = buildEpisodes(
+            episodes = subEpisodeMap,
+            subEpisodes = subEpisodeMap,
+            dubEpisodes = dubEpisodeMap,
+            episodeMetadata = episodeMetadata,
+            episodeFallbackPosterUrl = episodeFallbackPosterUrl,
+        )
+        val dubEpisodes = buildEpisodes(
+            episodes = dubEpisodeMap,
+            subEpisodes = subEpisodeMap,
+            dubEpisodes = dubEpisodeMap,
+            episodeMetadata = episodeMetadata,
+            episodeFallbackPosterUrl = episodeFallbackPosterUrl,
+        )
         val hasSub = subEpisodeMap.isNotEmpty()
         val hasDub = dubEpisodeMap.isNotEmpty()
         val trailerUrl = getTrailerUrl(primaryAnime)
@@ -1200,7 +1428,7 @@ class AnimeUnity(
             else if (primaryAnime.type == "Movie" || primaryAnime.episodesCount == 1) TvType.AnimeMovie
             else TvType.OVA,
         ) {
-            this.posterUrl = getImage(primaryAnime.imageUrl, primaryAnime.anilistId)
+            this.posterUrl = animePoster
             primaryAnime.cover?.let { this.backgroundPosterUrl = getBanner(it) }
             this.year = primaryAnime.date.toIntOrNull()
             addScore(primaryAnime.score)

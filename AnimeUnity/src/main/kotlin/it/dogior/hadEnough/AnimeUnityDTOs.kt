@@ -94,6 +94,7 @@ data class Anime(
     @JsonProperty("plot") val plot: String,
     @JsonProperty("date") val date: String,
     @JsonProperty("episodes_count") val episodesCount: Int,
+    @JsonProperty("real_episodes_count") val realEpisodesCount: Int?,
     @JsonProperty("episodes_length") val episodesLength: Int,
     @JsonProperty("status") val status: String,
 //    @JsonProperty("imageurl_cover") val imageUrlCover: String?,
@@ -145,6 +146,7 @@ data class LatestEpisodeAnime(
     @JsonProperty("title") val title: String?,
     @JsonProperty("imageurl") val imageUrl: String?,
     @JsonProperty("episodes_count") val episodesCount: Int,
+    @JsonProperty("real_episodes_count") val realEpisodesCount: Int?,
     @JsonProperty("type") val type: String,
     @JsonProperty("slug") val slug: String,
     @JsonProperty("title_eng") val titleEng: String?,
@@ -238,3 +240,18 @@ data class JikanTrailer(
     @JsonProperty("embed_url") val embedUrl: String?
 )
 
+data class AniZipMetadata(
+    @JsonProperty("episodes") val episodes: Map<String, AniZipEpisode>?
+)
+
+data class AniZipEpisode(
+    @JsonProperty("episode") val episode: String?,
+    @JsonProperty("airDate") val airDate: String?,
+    @JsonProperty("airDateUtc") val airDateUtc: String?,
+    @JsonProperty("runtime") val runtime: Int?,
+    @JsonProperty("image") val image: String?,
+    @JsonProperty("title") val title: Map<String, String?>?,
+    @JsonProperty("overview") val overview: String?,
+    @JsonProperty("summary") val summary: String?,
+    @JsonProperty("rating") val rating: String?
+)
